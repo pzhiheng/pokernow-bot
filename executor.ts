@@ -35,7 +35,14 @@ async function clickWithDelay(page: Page, selector: string): Promise<void> {
     await humanDelay(100, 300);
   }
   console.log(`  [executor] clicking ${selector}`);
-  await el.click();
+  try {
+    // force:true bypasses Playwright's actionability checks (overlay, tooltip, etc.)
+    await el.click({ force: true, timeout: 5000 });
+  } catch {
+    // fallback: dispatch a raw JS click event directly on the element
+    console.warn("  [executor] ⚠ normal click failed — trying JS click");
+    await el.evaluate((node: HTMLElement) => node.click());
+  }
   console.log(`  [executor] ✅ clicked`);
 }
 
