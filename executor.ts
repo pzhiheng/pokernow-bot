@@ -4,10 +4,10 @@ import { BotAction } from "./types";
 const SEL = {
   foldBtn: ".action-buttons button.fold",
   checkBtn: ".action-buttons button.check",
-  callBtn: ".action-buttons button.call-green",
+  callBtn: ".action-buttons button.call",
   raiseBtn: ".action-buttons button.raise",
-  raiseInput: ".action-buttons input[type='number']",
-  raiseConfirm: ".action-buttons button.raise-confirm",
+  raiseInput: ".action-buttons input",
+  raiseConfirm: ".action-buttons button.raise",
 };
 
 function humanDelay(min = 800, max = 2800): Promise<void> {
