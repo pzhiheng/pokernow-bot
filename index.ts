@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { chromium } from "playwright";
 import fs from "fs";
 import { scrapeGameState, isMyTurn, dumpDom } from "./scraper";
@@ -25,12 +26,8 @@ async function main() {
     console.error("Set TABLE_URL env var to your PokerNow game URL");
     process.exit(1);
   }
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("Set ANTHROPIC_API_KEY env var");
-    process.exit(1);
-  }
 
-  // DOM dump mode — run with: npm run dump
+  // DOM dump mode — run with: npm run dump (no API key needed)
   if (process.argv.includes("--dump")) {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
@@ -40,6 +37,11 @@ async function main() {
     console.log("Saved pokernow-dom-dump.html — open it and update selectors in scraper.ts");
     await browser.close();
     return;
+  }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("Set ANTHROPIC_API_KEY env var");
+    process.exit(1);
   }
 
   const browser = await chromium.launch({ headless: false }); // headed so you can watch

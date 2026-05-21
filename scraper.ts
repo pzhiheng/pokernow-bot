@@ -1,25 +1,25 @@
 import { Page } from "playwright";
 import { GameState, PlayerState, Card } from "./types";
 
-// Update these selectors after running `npm run dump` and inspecting pokernow-dom-dump.html
+// Selectors verified against PokerNow DOM dump
 const SEL = {
-  holeCards: ".player-cards .card-container",
-  communityCards: ".community-cards .card-container",
-  pot: ".pot-value",
-  toCall: ".call-button .call-value",
-  myStack: ".my-player .stack-value",
-  playerSeats: ".table-player",
-  playerStack: ".stack-value",
-  playerLastAction: ".action-text",
-  actionHistory: ".game-log-entry",
-  foldBtn: ".fold-button",
-  checkBtn: ".check-button",
-  callBtn: ".call-button",
-  raiseBtn: ".raise-button",
-  raiseInput: ".raise-input",
-  isMyTurn: ".action-buttons:not(.hidden)",
-  handNumber: ".hand-number",
-  street: ".street-indicator",
+  holeCards: ".table-player.me .card",             // hole cards on your seat
+  communityCards: ".table-cards .card",            // community board cards
+  pot: ".table-pot-size .main-value .normal-value",
+  toCall: ".action-buttons .call-green .normal-value", // call amount inside button
+  myStack: ".table-player.me .chips-value .normal-value",
+  playerSeats: ".table-player.table-player-seat",
+  playerStack: ".chips-value .normal-value",
+  playerLastAction: ".player-action",
+  actionHistory: ".chat-messages-list .message",
+  foldBtn: ".action-buttons button.fold",
+  checkBtn: ".action-buttons button.check",
+  callBtn: ".action-buttons button.call-green",
+  raiseBtn: ".action-buttons button.raise",
+  raiseInput: ".action-buttons input[type='number']",
+  raiseConfirm: ".action-buttons button.raise-confirm",
+  isMyTurn: ".action-buttons button",              // any button = my turn
+  street: ".table-cards",                          // detect via card count
 };
 
 function parseCard(el: Element): Card {

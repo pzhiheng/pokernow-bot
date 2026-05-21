@@ -2,12 +2,12 @@ import { Page } from "playwright";
 import { BotAction } from "./types";
 
 const SEL = {
-  foldBtn: ".fold-button",
-  checkBtn: ".check-button",
-  callBtn: ".call-button",
-  raiseBtn: ".raise-button",
-  raiseInput: ".raise-input",
-  raiseConfirm: ".raise-confirm-button",
+  foldBtn: ".action-buttons button.fold",
+  checkBtn: ".action-buttons button.check",
+  callBtn: ".action-buttons button.call-green",
+  raiseBtn: ".action-buttons button.raise",
+  raiseInput: ".action-buttons input[type='number']",
+  raiseConfirm: ".action-buttons button.raise-confirm",
 };
 
 function humanDelay(min = 800, max = 2800): Promise<void> {
@@ -52,7 +52,7 @@ export async function executeAction(page: Page, action: BotAction): Promise<void
         await humanDelay(300, 700);
         const input = await page.$(SEL.raiseInput);
         if (input) {
-          await input.triple_click?.();
+          await input.click({ clickCount: 3 });
           await input.fill(String(action.amount));
           await humanDelay(200, 500);
         }
