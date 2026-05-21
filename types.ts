@@ -36,6 +36,7 @@ export interface GameState {
   pot: number;
   to_call: number;
   my_stack: number;
+  available_actions: ActionType[]; // exactly what buttons are clickable right now
   players: PlayerState[];
   action_history_this_hand: string[];
   player_reads: PlayerReads;

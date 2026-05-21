@@ -69,11 +69,27 @@ export async function scrapeGameState(page: Page, handNumber: number, playerRead
     const toCall = parseAmount(callBtnText.replace(/call/i, "").trim());
     console.log(`  [scrape] call button text: "${callBtnText}" → to_call: ${toCall}`);
 
-    // --- Visible action buttons ---
+    // --- Available actions (only non-disabled buttons) ---
+    const available_actions = await page.$$eval(".action-buttons button", els =>
+      els
+        .filter(el => !el.hasAttribute("disabled"))
+        .map(el => {
+          const t = el.textContent?.trim().toLowerCase() ?? "";
+          if (t.includes("fold"))  return "fold";
+          if (t.includes("check")) return "check";
+          if (t.includes("call"))  return "call";
+          if (t.includes("raise")) return "raise";
+          return "";
+        })
+        .filter(Boolean)
+    ) as import("./types").ActionType[];
+    console.log(`  [scrape] available actions: [${available_actions.join(", ")}]`);
+
+    // --- All buttons (for debugging) ---
     const btns = await page.$$eval(".action-buttons button", els =>
       els.map(el => `${el.textContent?.trim()} [disabled=${el.hasAttribute("disabled")}]`)
     );
-    console.log(`  [scrape] action buttons: ${btns.join(" | ")}`);
+    console.log(`  [scrape] all buttons: ${btns.join(" | ")}`);
 
     // --- Players ---
     const playerEls = await page.$$(SEL.playerSeats);
@@ -94,16 +110,37 @@ export async function scrapeGameState(page: Page, handNumber: number, playerRead
       })
     )).filter(Boolean) as PlayerState[];
 
-    // --- Position ---
+    // --- Position (decode BTN/SB/BB/CO/MP from seat vs dealer) ---
     const position = await page.evaluate(() => {
       const you = document.querySelector(".you-player");
       const dealer = document.querySelector(".dealer-button-ctn");
       if (!you || !dealer) return "unknown";
-      const youClass = [...you.classList].find(c => c.startsWith("table-player-") && /\d/.test(c));
-      const dealerClass = [...dealer.classList].find(c => c.startsWith("dealer-position-"));
-      return `seat-${youClass?.replace("table-player-", "") ?? "?"} dealer-${dealerClass?.replace("dealer-position-", "") ?? "?"}`;
+
+      const seatClass = [...you.classList].find(c => /^table-player-\d+$/.test(c));
+      const dealerClass = [...dealer.classList].find(c => /^dealer-position-\d+$/.test(c));
+      const mySeat = parseInt(seatClass?.replace("table-player-", "") ?? "0");
+      const dealerSeat = parseInt(dealerClass?.replace("dealer-position-", "") ?? "0");
+
+      const activeSeats = [...document.querySelectorAll(".table-player")]
+        .map(el => [...el.classList].find(c => /^table-player-\d+$/.test(c)))
+        .filter(Boolean)
+        .map(c => parseInt(c!.replace("table-player-", "")))
+        .sort((a, b) => a - b);
+
+      const n = activeSeats.length;
+      if (n === 0) return "unknown";
+
+      const dealerIdx = activeSeats.indexOf(dealerSeat);
+      const myIdx = activeSeats.indexOf(mySeat);
+      const relPos = ((myIdx - dealerIdx) + n) % n;
+
+      if (relPos === 0) return "BTN";
+      if (relPos === 1) return "SB";
+      if (relPos === 2) return "BB";
+      if (relPos === n - 1) return "CO";
+      return `MP${relPos - 2}`;
     }).catch(() => "unknown");
-    console.log(`  [scrape] position info: ${position}`);
+    console.log(`  [scrape] position: ${position}`);
 
     const state: GameState = {
       hand: handNumber,
@@ -111,6 +148,7 @@ export async function scrapeGameState(page: Page, handNumber: number, playerRead
       position,
       hole_cards: holeCards,
       community,
+      available_actions,
       pot,
       to_call: toCall,
       my_stack: parseAmount(myStackText),
