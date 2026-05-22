@@ -2,9 +2,10 @@
   "name": "pokernow-bot",
   "version": "1.0.0",
   "scripts": {
-    "ui":   "ts-node server.ts",
-    "dev":  "ts-node index.ts",
-    "dump": "TABLE_URL=$TABLE_URL ts-node index.ts --dump"
+    "start": "ts-node server.ts",
+    "ui":    "ts-node server.ts",
+    "dev":   "ts-node index.ts",
+    "dump":  "TABLE_URL=$TABLE_URL ts-node index.ts --dump"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.0",

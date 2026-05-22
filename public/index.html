@@ -365,8 +365,20 @@ fetch('/config').then(r => r.json()).then(cfg => {
   if (cfg.tableUrl) tableUrlEl.value = cfg.tableUrl;
   if (cfg.botName)  botNameEl.value  = cfg.botName;
   if (cfg.stack)    stackEl.value    = cfg.stack;
-  // Only pre-fill strategy if no archetype already selected
-  if (cfg.strategy && activeIdx === -1) strategyEl.value = cfg.strategy;
+
+  if (cfg.strategy) {
+    strategyEl.value = cfg.strategy;
+
+    // Auto-select archetype if the saved strategy matches one exactly
+    const match = ARCHETYPES.findIndex(a => a.prompt.trim() === cfg.strategy.trim());
+    if (match !== -1) {
+      activeIdx = match;
+      renderArchetypes();
+    }
+  }
+
+  // Highlight missing required fields
+  if (!cfg.tableUrl) tableUrlEl.style.borderColor = '#f85149';
 });
 
 function addLog(msg) {

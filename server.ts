@@ -2,7 +2,25 @@ import "dotenv/config";
 import express, { Request, Response } from "express";
 import { spawn, ChildProcess } from "child_process";
 import path from "path";
+import fs from "fs";
 import { exec } from "child_process";
+
+// Persist config back to .env so the next launch remembers it
+function saveToEnv(updates: Record<string, string>) {
+  const envPath = path.join(__dirname, ".env");
+  let content = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
+  for (const [key, value] of Object.entries(updates)) {
+    const escaped = value.replace(/\n/g, "\\n");
+    const line = `${key}=${escaped}`;
+    const regex = new RegExp(`^${key}=.*$`, "m");
+    if (regex.test(content)) {
+      content = content.replace(regex, line);
+    } else {
+      content = content.trimEnd() + `\n${line}\n`;
+    }
+  }
+  fs.writeFileSync(envPath, content);
+}
 
 const app = express();
 const PORT = 3001;
@@ -60,15 +78,27 @@ app.post("/start", (req: Request, res: Response) => {
     return;
   }
 
+  const resolvedName     = botName  || "PokerBot";
+  const resolvedStack    = String(stack || 1000);
+  const resolvedStrategy = strategy || "Play GTO poker.";
+
+  // Save back to .env so next launch remembers these values
+  saveToEnv({
+    TABLE_URL: tableUrl,
+    BOT_NAME:  resolvedName,
+    STACK:     resolvedStack,
+    STRATEGY:  resolvedStrategy,
+  });
+
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     TABLE_URL: tableUrl,
-    BOT_NAME:  botName  || "PokerBot",
-    STACK:     String(stack || 1000),
-    STRATEGY:  strategy || "Play GTO poker.",
+    BOT_NAME:  resolvedName,
+    STACK:     resolvedStack,
+    STRATEGY:  resolvedStrategy,
   };
 
-  broadcast(`[server] launching bot — name="${botName}" stack=${stack}`);
+  broadcast(`[server] launching bot — name="${resolvedName}" stack=${resolvedStack}`);
 
   botProcess = spawn("npx", ["ts-node", "index.ts"], {
     env,
