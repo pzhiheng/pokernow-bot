@@ -114,7 +114,8 @@ async function main() {
         // Previous hand ended — update player reads from what we observed
         handNumber++;
         console.log(`\n[bot] 🃏 new hand detected (#${handNumber}) — updating player reads from ${handActionLog.length} actions...`);
-        playerReads = await updatePlayerReads(playerReads, handActionLog.join("\n"));
+        const handSummary = `Hand #${handNumber}, ${state.num_players} players at table\n${handActionLog.join("\n")}`;
+        playerReads = await updatePlayerReads(playerReads, handSummary);
         saveReads(playerReads);
         console.log(`[bot] ✅ player reads updated (${Object.keys(playerReads).length} players tracked)`);
         if (Object.keys(playerReads).length > 0) {
