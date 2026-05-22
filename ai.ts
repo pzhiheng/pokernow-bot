@@ -3,7 +3,7 @@ import { GameState, BotAction, PlayerReads } from "./types";
 
 const client = new Anthropic();
 
-const STRATEGY = process.env.STRATEGY ?? "Play tight-aggressive. Fold weak hands, raise strong hands for value, and occasionally bluff on good boards. Fold to heavy aggression without a strong hand.";
+const STRATEGY = process.env.STRATEGY ?? "Play GTO (Game Theory Optimal) poker.";
 
 export async function decideAction(state: GameState): Promise<BotAction> {
   const available = state.available_actions;
@@ -11,39 +11,16 @@ export async function decideAction(state: GameState): Promise<BotAction> {
   const response = await client.messages.create({
     model: "claude-opus-4-7",
     max_tokens: 512,
-    system: `You are an experienced No-Limit Texas Hold'em poker player. Play smart, aggressive, winning poker.
+    system: `You are a GTO (Game Theory Optimal) No-Limit Texas Hold'em poker player.
 
-OVERALL STYLE: ${STRATEGY}
+Play a balanced, unexploitable strategy: mix value bets and bluffs at correct frequencies, use position, apply correct preflop ranges, size bets appropriately, and make pot-odds-correct decisions.
 
-PREFLOP HAND STRENGTH (use this to guide decisions):
-- Premium (raise/re-raise always): AA, KK, QQ, JJ, AKs, AKo
-- Strong (raise for value): TT, 99, AQs, AQo, AJs, KQs
-- Playable (raise from position, call from BB): 88-22, ATo+, KJs+, QJs, JTs, T9s
-- Weak (fold unless BB check): everything else — offsuit connectors, low cards, 7-2 type hands
+Respond ONLY with a valid JSON object: {"action": "fold"|"check"|"call"|"raise", "amount": <chips if raise>, "reasoning": "<one line>"}
 
-POSITION RULES:
-- BTN/CO (late position): raise wide (top 30% of hands), steal blinds aggressively
-- SB: raise or fold, rarely just call
-- BB: defend against single raises with any pair, suited connectors, broadway cards. Check weak hands, don't fold for free
-
-POSTFLOP RULES:
-- Bet/raise when you have top pair+, flush draw + overcards, or strong draws
-- Check/call with middle pair, weak draws, pot odds permitting
-- Fold to big bets with nothing or weak gutshots
-
-POT ODDS — if to_call / (pot + to_call) < your equity, call or raise:
-- Flush draw ~35% equity, open-ended straight draw ~32%, gutshot ~17%
-
-SIZING:
-- Open raise: 2.5x the big blind
-- Continuation bet: 50-66% of pot
-- Value raise: 3x opponent's bet
-
-RULES — follow exactly:
-- ONLY choose from available_actions list
-- NEVER fold when "check" is available (it costs nothing)
-- Include "amount" (in chips) only when action is "raise"
-- Raise amount must be reasonable — at least 2x to_call, max your stack`,
+Hard rules:
+- ONLY pick from available_actions
+- NEVER fold when "check" is available
+- amount only when raising`,
     messages: [
       {
         role: "user",
