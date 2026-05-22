@@ -77,11 +77,26 @@ export async function executeAction(page: Page, action: BotAction): Promise<void
           break;
         }
 
-        // Clear the amount field and type our value
+        // Clear the amount field and type our value.
+        // page.fill() focuses + clears + sets value atomically (works on React inputs).
+        // Then we triple-click + Select-All + Delete as a belt-and-suspenders clear,
+        // re-type the amount, so the field contains ONLY our desired number.
         console.log(`  [executor] setting raise amount: ${action.amount}`);
-        await page.click(SEL.raiseInput, { clickCount: 3 });
-        await page.keyboard.press("Control+a");
-        await page.keyboard.type(String(action.amount));
+        await page.fill(SEL.raiseInput, String(action.amount));
+        await new Promise(r => setTimeout(r, 100));
+
+        // Verify the value looks right; if page.fill left residue, force-clear and retype
+        const currentVal = await page.$eval(SEL.raiseInput, (el: HTMLInputElement) => el.value);
+        console.log(`  [executor] raise input value after fill: "${currentVal}"`);
+        if (currentVal !== String(action.amount)) {
+          console.warn(`  [executor] ⚠ fill mismatch — forcing select-all + delete + retype`);
+          await page.focus(SEL.raiseInput);
+          await page.keyboard.press("Control+a");
+          await new Promise(r => setTimeout(r, 80));
+          await page.keyboard.press("Delete");
+          await new Promise(r => setTimeout(r, 80));
+          await page.keyboard.type(String(action.amount));
+        }
         await humanDelay(200, 400);
 
         // Click the green "Bet" submit button
