@@ -109,6 +109,10 @@ async function main() {
     handActionLog.push(`Hand ${handNumber} | ${state.street} | ${action.action}${action.amount ? ` ${action.amount}` : ""}`);
 
     await executeAction(page, action);
+
+    // Cooldown after acting — wait for UI to update before polling again
+    console.log("[bot] waiting 3s for UI to update...");
+    await new Promise(r => setTimeout(r, 3000));
     console.log("[bot] =====================\n");
   }
 }

@@ -21,28 +21,33 @@ async function clickWithDelay(page: Page, selector: string): Promise<void> {
   console.log(`  [executor] looking for: ${selector}`);
   const el = await page.$(selector);
   if (!el) {
-    // list what buttons ARE available to help debug
     const available = await page.$$eval(".action-buttons button", els =>
       els.map(e => `"${e.textContent?.trim()}" [class="${e.className}"]`)
     ).catch(() => []);
-    throw new Error(`Button not found: ${selector}\n  Available buttons: ${available.join(", ") || "none"}`);
+    throw new Error(`Button not found: ${selector}\n  Available: ${available.join(", ") || "none"}`);
   }
+
   const box = await el.boundingBox();
-  if (box) {
-    const x = box.x + box.width * (0.3 + Math.random() * 0.4);
-    const y = box.y + box.height * (0.3 + Math.random() * 0.4);
-    await page.mouse.move(x, y, { steps: 5 });
-    await humanDelay(100, 300);
-  }
-  console.log(`  [executor] clicking ${selector}`);
-  try {
-    // force:true bypasses Playwright's actionability checks (overlay, tooltip, etc.)
-    await el.click({ force: true, timeout: 5000 });
-  } catch {
-    // fallback: dispatch a raw JS click event directly on the element
-    console.warn("  [executor] ⚠ normal click failed — trying JS click");
-    await el.evaluate((node: HTMLElement) => node.click());
-  }
+  if (!box) throw new Error(`No bounding box for: ${selector}`);
+
+  // Use real mouse events at actual coordinates — React's onMouseDown/onPointerDown
+  // only fire from genuine mouse movements, not Playwright's synthetic el.click()
+  const x = box.x + box.width  * (0.3 + Math.random() * 0.4);
+  const y = box.y + box.height * (0.3 + Math.random() * 0.4);
+
+  console.log(`  [executor] mouse.move → (${x.toFixed(0)}, ${y.toFixed(0)})`);
+  await page.mouse.move(x, y, { steps: 8 });
+  await humanDelay(80, 200);
+
+  console.log(`  [executor] mouse.down`);
+  await page.mouse.down();
+  await humanDelay(40, 120);
+
+  console.log(`  [executor] mouse.up`);
+  await page.mouse.up();
+
+  // Brief wait to let the React handler fire and UI update
+  await new Promise(r => setTimeout(r, 400));
   console.log(`  [executor] ✅ clicked`);
 }
 
