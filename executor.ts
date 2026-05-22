@@ -2,13 +2,13 @@ import { Page } from "playwright";
 import { BotAction } from "./types";
 
 const SEL = {
-  foldBtn:     ".action-buttons button.fold",
-  checkBtn:    ".action-buttons button.check",
-  callBtn:     ".action-buttons button.call",
-  raiseBtn:    ".action-buttons button.raise",
-  // exclude type=submit and type=checkbox — the raise amount field is a text/number input
-  raiseInput:  ".game-decisions-ctn input:not([type='submit']):not([type='checkbox']):not([disabled])",
-  raiseConfirm:".game-decisions-ctn input[type='submit']",
+  foldBtn:      ".action-buttons button.fold",
+  checkBtn:     ".action-buttons button.check",
+  callBtn:      ".action-buttons button.call",
+  raiseBtn:     ".action-buttons button.raise",
+  raiseForm:    ".raise-controller-form",           // appears after clicking Raise
+  raiseInput:   ".raise-bet-value input.value",     // the amount text field
+  raiseConfirm: ".raise-controller-form input[type='submit']", // the green "Bet" button
 };
 
 function humanDelay(min = 800, max = 2800): Promise<void> {
@@ -68,32 +68,25 @@ export async function executeAction(page: Page, action: BotAction): Promise<void
     case "raise":
       await clickWithDelay(page, SEL.raiseBtn);
       if (action.amount) {
-        // Wait for the raise input panel to open after clicking Raise
-        console.log(`  [executor] waiting for raise input to appear...`);
+        // Wait for the raise-controller-form to slide in
+        console.log(`  [executor] waiting for raise panel...`);
         try {
-          await page.waitForSelector(SEL.raiseInput, { state: "visible", timeout: 4000 });
+          await page.waitForSelector(SEL.raiseForm, { state: "visible", timeout: 4000 });
         } catch {
-          console.warn("  [executor] ⚠ raise input did not appear — clicking raise btn directly");
-          await clickWithDelay(page, SEL.raiseConfirm);
+          console.warn("  [executor] ⚠ raise form did not appear");
           break;
         }
 
-        // Clear the field and type the amount
-        console.log(`  [executor] filling raise amount: ${action.amount}`);
+        // Clear the amount field and type our value
+        console.log(`  [executor] setting raise amount: ${action.amount}`);
         await page.click(SEL.raiseInput, { clickCount: 3 });
         await page.keyboard.press("Control+a");
         await page.keyboard.type(String(action.amount));
-        console.log(`  [executor] typed raise amount`);
         await humanDelay(200, 400);
 
-        // Confirm — click the submit input or press Enter
-        const confirmEl = await page.$(SEL.raiseConfirm);
-        if (confirmEl) {
-          await clickWithDelay(page, SEL.raiseConfirm);
-        } else {
-          console.log(`  [executor] no confirm btn found — pressing Enter`);
-          await page.keyboard.press("Enter");
-        }
+        // Click the green "Bet" submit button
+        console.log(`  [executor] clicking Bet to confirm`);
+        await clickWithDelay(page, SEL.raiseConfirm);
       }
       break;
 
