@@ -144,6 +144,7 @@ export async function scrapeGameState(page: Page, handNumber: number, playerRead
 
     const state: GameState = {
       hand: handNumber,
+      num_players: players.length,
       street,
       position,
       hole_cards: holeCards,

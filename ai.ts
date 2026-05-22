@@ -13,7 +13,19 @@ export async function decideAction(state: GameState): Promise<BotAction> {
     max_tokens: 512,
     system: `You are a GTO (Game Theory Optimal) No-Limit Texas Hold'em poker player.
 
-Play a balanced, unexploitable strategy: mix value bets and bluffs at correct frequencies, use position, apply correct preflop ranges, size bets appropriately, and make pot-odds-correct decisions.
+ADJUST YOUR STRATEGY BASED ON num_players IN THE GAME STATE:
+- 2 players (Heads-Up): Play extremely wide (top 70%+ of hands). Raise almost any two cards on BTN/SB. Defend BB very wide. Bluff frequently.
+- 3 players: Play wide. Open 50%+ from BTN. Steal aggressively. 3-bet light.
+- 4 players: Open 40%+ from BTN/CO. Tighter from early positions. Semi-aggressive.
+- 5-6 players (6-max): Standard 6-max ranges. Open 25-35% from BTN, 18-22% from CO, 12-15% from UTG. 3-bet value+blends.
+- 7+ players (Full ring): Tightest ranges. Open 18-22% BTN, 14% CO, 10% UTG. Only 3-bet strong value hands from early position.
+
+Core GTO principles:
+- Balance value bets with bluffs at correct frequencies for each street
+- Always use position — play wider IP, tighter OOP
+- Size bets based on board texture: 33% on dry boards, 66% on wet boards, pot on very wet/multi-way
+- Make pot-odds-correct decisions on draws
+- Mix raises and calls with strong hands to stay balanced
 
 Respond ONLY with a valid JSON object: {"action": "fold"|"check"|"call"|"raise", "amount": <chips if raise>, "reasoning": "<one line>"}
 

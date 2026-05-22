@@ -29,6 +29,7 @@ export interface PlayerReads {
 
 export interface GameState {
   hand: number;
+  num_players: number;         // total players seated at the table right now
   street: "preflop" | "flop" | "turn" | "river";
   position: string; // "BTN", "SB", "BB", "UTG", "CO", "MP"
   hole_cards: [Card, Card];
