@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PokerNow Bot</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0d1117;
+      --surface:    #161b22;
+      --border:     #30363d;
+      --green:      #238636;
+      --green-h:    #2ea043;
+      --red:        #b91c1c;
+      --red-h:      #dc2626;
+      --text:       #e6edf3;
+      --muted:      #8b949e;
+      --input-bg:   #010409;
+      --accent:     #1f6feb;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    header .logo { font-size: 32px; }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    header h1 span { color: var(--green); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      width: 100%;
+      max-width: 580px;
+    }
+
+    .card + .card { margin-top: 16px; }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .field { margin-bottom: 18px; }
+    .field:last-child { margin-bottom: 0; }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+      font-family: inherit;
+    }
+
+    .field input:focus,
+    .field textarea:focus { border-color: var(--accent); }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 90px;
+      line-height: 1.5;
+    }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 22px;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    #startBtn {
+      background: var(--green);
+      color: #fff;
+      flex: 1;
+    }
+    #startBtn:hover:not(:disabled) { background: var(--green-h); }
+
+    #stopBtn {
+      background: var(--red);
+      color: #fff;
+      display: none;
+    }
+    #stopBtn:hover { background: var(--red-h); }
+
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+    .dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1.5s infinite; }
+    .dot.error   { background: var(--red); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* Log panel */
+    .log-panel {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      height: 320px;
+      overflow-y: auto;
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      scroll-behavior: smooth;
+    }
+
+    .log-line { color: var(--muted); white-space: pre-wrap; word-break: break-all; }
+    .log-line.info   { color: var(--text); }
+    .log-line.good   { color: #3fb950; }
+    .log-line.warn   { color: #d29922; }
+    .log-line.err    { color: #f85149; }
+    .log-line.action { color: #79c0ff; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">🃏</span>
+  <h1>Poker<span>Now</span> Bot</h1>
+</header>
+
+<!-- Config -->
+<div class="card">
+  <div class="card-title">Configuration</div>
+
+  <div class="field">
+    <label>Table URL</label>
+    <input id="tableUrl" type="url" placeholder="https://www.pokernow.com/games/..." />
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label>Bot Name</label>
+      <input id="botName" type="text" placeholder="e.g. PokerBot" />
+    </div>
+    <div class="field">
+      <label>Buy-in (chips)</label>
+      <input id="stack" type="number" placeholder="e.g. 1000" min="1" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label>AI Strategy Prompt</label>
+    <textarea id="strategy" placeholder="e.g. Play GTO poker."></textarea>
+  </div>
+
+  <div class="actions">
+    <button id="startBtn">▶ Start Bot</button>
+    <button id="stopBtn">■ Stop</button>
+  </div>
+
+  <div class="status">
+    <div class="dot" id="dot"></div>
+    <span id="statusText">Idle</span>
+  </div>
+</div>
+
+<!-- Logs -->
+<div class="card">
+  <div class="card-title">Live Logs</div>
+  <div class="log-panel" id="logs">
+    <div class="log-line">Waiting to start...</div>
+  </div>
+</div>
+
+<script>
+  const startBtn    = document.getElementById('startBtn');
+  const stopBtn     = document.getElementById('stopBtn');
+  const dot         = document.getElementById('dot');
+  const statusText  = document.getElementById('statusText');
+  const logsEl      = document.getElementById('logs');
+  const tableUrlEl  = document.getElementById('tableUrl');
+  const strategyEl  = document.getElementById('strategy');
+  const botNameEl   = document.getElementById('botName');
+  const stackEl     = document.getElementById('stack');
+
+  let evtSource = null;
+
+  // Load defaults from server
+  fetch('/config').then(r => r.json()).then(cfg => {
+    if (cfg.tableUrl)  tableUrlEl.value  = cfg.tableUrl;
+    if (cfg.strategy)  strategyEl.value  = cfg.strategy;
+    if (cfg.botName)   botNameEl.value   = cfg.botName;
+    if (cfg.stack)     stackEl.value     = cfg.stack;
+  });
+
+  function addLog(msg) {
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    if (msg.includes('✅') || msg.includes('Claude says') || msg.includes('♥')) line.classList.add('good');
+    else if (msg.includes('⚠') || msg.includes('warn'))  line.classList.add('warn');
+    else if (msg.includes('❌') || msg.includes('err]'))  line.classList.add('err');
+    else if (msg.includes('action=') || msg.includes('MY TURN')) line.classList.add('action');
+    else if (msg.includes('[bot]') || msg.includes('[scrape]') || msg.includes('[executor]')) line.classList.add('info');
+    line.textContent = msg;
+    logsEl.appendChild(line);
+    logsEl.scrollTop = logsEl.scrollHeight;
+  }
+
+  function setRunning(running) {
+    startBtn.disabled = running;
+    stopBtn.style.display = running ? 'block' : 'none';
+    dot.className = 'dot' + (running ? ' running' : '');
+    statusText.textContent = running ? 'Bot running' : 'Idle';
+  }
+
+  startBtn.addEventListener('click', async () => {
+    const body = {
+      tableUrl: tableUrlEl.value.trim(),
+      botName:  botNameEl.value.trim() || 'PokerBot',
+      stack:    parseInt(stackEl.value) || 1000,
+      strategy: strategyEl.value.trim() || 'Play GTO poker.',
+    };
+
+    if (!body.tableUrl) { alert('Enter a Table URL'); return; }
+
+    logsEl.innerHTML = '';
+    addLog('Starting bot...');
+
+    const res = await fetch('/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.error) { addLog('❌ ' + data.error); return; }
+
+    setRunning(true);
+
+    // Stream logs via SSE
+    evtSource = new EventSource('/logs');
+    evtSource.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      addLog(msg);
+      if (msg.includes('process exited') || msg.includes('stopped by user')) {
+        setRunning(false);
+        evtSource?.close();
+      }
+    };
+  });
+
+  stopBtn.addEventListener('click', async () => {
+    await fetch('/stop', { method: 'POST' });
+    evtSource?.close();
+    setRunning(false);
+    addLog('Bot stopped.');
+  });
+</script>
+
+</body>
+</html>

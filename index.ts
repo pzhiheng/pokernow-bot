@@ -7,6 +7,8 @@ import { executeAction } from "./executor";
 import { PlayerReads } from "./types";
 
 const TABLE_URL = process.env.TABLE_URL ?? "";
+const BOT_NAME  = process.env.BOT_NAME  ?? "PokerBot";
+const STACK     = parseInt(process.env.STACK ?? "1000");
 const READS_FILE = "player_reads.json";
 const POLL_MS = 1500;
 
@@ -47,8 +49,10 @@ async function main() {
   }
 
   console.log("🚀 Starting PokerNow bot...");
-  console.log(`   Table: ${TABLE_URL}`);
-  console.log(`   Poll interval: ${POLL_MS}ms`);
+  console.log(`   Table:    ${TABLE_URL}`);
+  console.log(`   Name:     ${BOT_NAME}`);
+  console.log(`   Stack:    ${STACK}`);
+  console.log(`   Poll:     ${POLL_MS}ms`);
 
   const browser = await chromium.launch({ headless: false });
   const page = await browser.newPage();
