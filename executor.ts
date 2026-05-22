@@ -67,18 +67,24 @@ export async function executeAction(page: Page, action: BotAction): Promise<void
     case "raise":
       await clickWithDelay(page, SEL.raiseBtn);
       if (action.amount) {
-        await humanDelay(300, 700);
-        const input = await page.$(SEL.raiseInput);
-        if (input) {
-          console.log(`  [executor] filling raise input with ${action.amount}`);
-          await input.click({ clickCount: 3 });
-          await input.fill(String(action.amount));
-          await humanDelay(200, 500);
+        // Wait for the raise input panel to open after clicking Raise
+        console.log(`  [executor] waiting for raise input to appear...`);
+        try {
+          await page.waitForSelector(SEL.raiseInput, { state: "visible", timeout: 4000 });
+        } catch {
+          console.warn("  [executor] ⚠ raise input did not appear — clicking raise btn directly");
           await clickWithDelay(page, SEL.raiseConfirm);
-        } else {
-          console.warn("  [executor] ⚠ raise input not found — clicking raise btn directly");
-          await clickWithDelay(page, SEL.raiseConfirm);
+          break;
         }
+
+        // Use page.fill() by selector (always fresh reference, never stale)
+        console.log(`  [executor] filling raise amount: ${action.amount}`);
+        await page.click(SEL.raiseInput, { clickCount: 3 });
+        await page.fill(SEL.raiseInput, String(action.amount));
+        await humanDelay(200, 400);
+
+        // Confirm the raise
+        await clickWithDelay(page, SEL.raiseConfirm);
       }
       break;
 
