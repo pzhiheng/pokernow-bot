@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { chromium } from "playwright";
 import fs from "fs";
-import { scrapeGameState, isMyTurn, dumpDom } from "./scraper";
+import { scrapeGameState, scrapeGameLog, isMyTurn, dumpDom } from "./scraper";
 import { decideAction, updatePlayerReads } from "./ai";
 import { executeAction } from "./executor";
 import { PlayerReads } from "./types";
@@ -29,15 +29,12 @@ async function main() {
     process.exit(1);
   }
 
-  // DOM dump mode
   if (process.argv.includes("--dump")) {
     console.log("[dump] launching headless browser...");
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
-    console.log(`[dump] navigating to ${TABLE_URL}`);
     await page.goto(TABLE_URL, { waitUntil: "networkidle" });
-    const html = await dumpDom(page);
-    fs.writeFileSync("pokernow-dom-dump.html", html);
+    fs.writeFileSync("pokernow-dom-dump.html", await dumpDom(page));
     console.log("✅ Saved pokernow-dom-dump.html");
     await browser.close();
     return;
@@ -60,23 +57,41 @@ async function main() {
   console.log("[bot] navigating to table...");
   await page.goto(TABLE_URL, { waitUntil: "networkidle" });
   console.log("[bot] ✅ page loaded — make sure you are seated and a hand is running");
-  console.log("[bot] polling for your turn every 1.5s...\n");
+  console.log("[bot] polling every 1.5s...\n");
 
   let playerReads = loadReads();
   let handNumber = 0;
-  let lastHandNumber = -1;
-  let handActionLog: string[] = [];
   let pollCount = 0;
+
+  // --- Hand tracking ---
+  let lastHoleCards = "";        // detect new hand when hole cards change
+  let handActionLog: string[] = []; // all observed actions this hand
+
+  // --- Game log dedup ---
+  // We keep a count of log lines already processed so we only add new ones each poll
+  let seenLogCount = 0;
 
   while (true) {
     await new Promise(r => setTimeout(r, POLL_MS));
     pollCount++;
 
-    // Log a heartbeat every 20 polls (~30s) so you know it's alive
+    // Heartbeat every 30s
     if (pollCount % 20 === 0) {
-      console.log(`[poll] ♥ still watching... (${pollCount} polls, hand #${handNumber})`);
+      console.log(`[poll] ♥ alive — poll #${pollCount}, hand #${handNumber}, reads: ${Object.keys(playerReads).length} players`);
     }
 
+    // --- Poll game log every tick (not just our turn) to capture ALL player actions ---
+    const allLogLines = await scrapeGameLog(page);
+    const newLines = allLogLines.slice(seenLogCount);
+    if (newLines.length > 0) {
+      seenLogCount = allLogLines.length;
+      newLines.forEach(line => {
+        handActionLog.push(line);
+        console.log(`[log] ${line}`);
+      });
+    }
+
+    // --- Only proceed with AI decision when it's our turn ---
     const myTurn = await isMyTurn(page);
     if (!myTurn) continue;
 
@@ -89,32 +104,43 @@ async function main() {
       continue;
     }
 
-    // Detect new hand
-    if (state.hand !== lastHandNumber) {
-      if (lastHandNumber >= 0 && handActionLog.length > 0) {
-        console.log(`\n[bot] hand #${lastHandNumber} ended — updating player reads...`);
+    // --- Detect new hand by watching hole cards change ---
+    const holeCardKey = state.hole_cards.join(",");
+    if (holeCardKey !== lastHoleCards) {
+      if (lastHoleCards !== "" && handActionLog.length > 0) {
+        // Previous hand ended — update player reads from what we observed
+        handNumber++;
+        console.log(`\n[bot] 🃏 new hand detected (#${handNumber}) — updating player reads from ${handActionLog.length} actions...`);
         playerReads = await updatePlayerReads(playerReads, handActionLog.join("\n"));
         saveReads(playerReads);
-        console.log("[bot] player reads saved");
+        console.log(`[bot] ✅ player reads updated (${Object.keys(playerReads).length} players tracked)`);
+        if (Object.keys(playerReads).length > 0) {
+          Object.entries(playerReads).forEach(([seat, read]) => {
+            console.log(`[reads]   ${seat}: ${(read as any).tendencies}`);
+          });
+        }
         handActionLog = [];
+        seenLogCount = 0; // reset log tracking for new hand
+      } else if (lastHoleCards === "") {
+        handNumber = 1;
       }
-      handNumber++;
-      state.hand = handNumber;
-      lastHandNumber = handNumber;
-      console.log(`[bot] new hand detected — hand #${handNumber}`);
+      lastHoleCards = holeCardKey;
     }
 
-    console.log(`[bot] state: ${state.street} | hole=[${state.hole_cards.join(",")}] board=[${state.community.join(",") || "none"}] pot=${state.pot} to_call=${state.to_call} stack=${state.my_stack}`);
+    // Inject the rolling action log into the state (last 20 lines to cap tokens)
+    state.action_history_this_hand = handActionLog.slice(-20);
+    state.hand = handNumber;
+
+    console.log(`[bot] hand #${handNumber} | ${state.street} | hole=[${state.hole_cards.join(",")}] board=[${state.community.join(",") || "none"}] pot=${state.pot} to_call=${state.to_call} stack=${state.my_stack} pos=${state.position}`);
+    console.log(`[bot] action history (${state.action_history_this_hand.length} lines): ${state.action_history_this_hand.slice(-3).join(" | ") || "none yet"}`);
     console.log("[bot] asking Claude for decision...");
 
     const action = await decideAction(state);
     console.log(`[bot] Claude says: ${action.action}${action.amount ? ` ${action.amount}` : ""} — "${action.reasoning}"`);
 
-    handActionLog.push(`Hand ${handNumber} | ${state.street} | ${action.action}${action.amount ? ` ${action.amount}` : ""}`);
-
     await executeAction(page, action);
 
-    // Cooldown after acting — wait for UI to update before polling again
+    // Wait for UI to update before polling again
     console.log("[bot] waiting 3s for UI to update...");
     await new Promise(r => setTimeout(r, 3000));
     console.log("[bot] =====================\n");

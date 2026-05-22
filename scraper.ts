@@ -153,7 +153,7 @@ export async function scrapeGameState(page: Page, handNumber: number, playerRead
       to_call: toCall,
       my_stack: parseAmount(myStackText),
       players,
-      action_history_this_hand: [],
+      action_history_this_hand: [], // populated by index.ts from the rolling log
       player_reads: playerReads,
     };
     console.log(`  [scrape] ✅ state built successfully`);
@@ -172,6 +172,18 @@ export async function isMyTurn(page: Page): Promise<boolean> {
   const result = text?.toLowerCase().includes("your turn") ?? false;
   if (result) console.log(`[poll] 🎯 detected "Your Turn" — action-signal text: "${text?.trim()}"`);
   return result;
+}
+
+// Scrape all game action lines from the visible chat log.
+// Returns the full list so the caller can diff against what it's already seen.
+// PokerNow prints actions as non-highlighted chat entries containing poker keywords.
+export async function scrapeGameLog(page: Page): Promise<string[]> {
+  return page.$$eval(
+    '.chat-messages-container:first-child .chat-messages-list .chat-message-container:not(.highlight)',
+    els => els
+      .map(el => el.querySelector(".message-content span")?.textContent?.trim() ?? "")
+      .filter(t => /raises?|calls?|folds?|checks?|bets?|wins?|shows?|posts?|all.in|collected|dealt/i.test(t))
+  ).catch(() => []);
 }
 
 export async function dumpDom(page: Page): Promise<string> {
