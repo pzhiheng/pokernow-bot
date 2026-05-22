@@ -2,12 +2,13 @@ import { Page } from "playwright";
 import { BotAction } from "./types";
 
 const SEL = {
-  foldBtn: ".action-buttons button.fold",
-  checkBtn: ".action-buttons button.check",
-  callBtn: ".action-buttons button.call",
-  raiseBtn: ".action-buttons button.raise",
-  raiseInput: ".action-buttons input",
-  raiseConfirm: ".action-buttons button.raise",
+  foldBtn:     ".action-buttons button.fold",
+  checkBtn:    ".action-buttons button.check",
+  callBtn:     ".action-buttons button.call",
+  raiseBtn:    ".action-buttons button.raise",
+  // exclude type=submit and type=checkbox — the raise amount field is a text/number input
+  raiseInput:  ".game-decisions-ctn input:not([type='submit']):not([type='checkbox']):not([disabled])",
+  raiseConfirm:".game-decisions-ctn input[type='submit']",
 };
 
 function humanDelay(min = 800, max = 2800): Promise<void> {
@@ -77,14 +78,22 @@ export async function executeAction(page: Page, action: BotAction): Promise<void
           break;
         }
 
-        // Use page.fill() by selector (always fresh reference, never stale)
+        // Clear the field and type the amount
         console.log(`  [executor] filling raise amount: ${action.amount}`);
         await page.click(SEL.raiseInput, { clickCount: 3 });
-        await page.fill(SEL.raiseInput, String(action.amount));
+        await page.keyboard.press("Control+a");
+        await page.keyboard.type(String(action.amount));
+        console.log(`  [executor] typed raise amount`);
         await humanDelay(200, 400);
 
-        // Confirm the raise
-        await clickWithDelay(page, SEL.raiseConfirm);
+        // Confirm — click the submit input or press Enter
+        const confirmEl = await page.$(SEL.raiseConfirm);
+        if (confirmEl) {
+          await clickWithDelay(page, SEL.raiseConfirm);
+        } else {
+          console.log(`  [executor] no confirm btn found — pressing Enter`);
+          await page.keyboard.press("Enter");
+        }
       }
       break;
 
