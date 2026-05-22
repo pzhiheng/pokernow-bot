@@ -30,24 +30,20 @@ async function clickWithDelay(page: Page, selector: string): Promise<void> {
   const box = await el.boundingBox();
   if (!box) throw new Error(`No bounding box for: ${selector}`);
 
-  // Use real mouse events at actual coordinates — React's onMouseDown/onPointerDown
-  // only fire from genuine mouse movements, not Playwright's synthetic el.click()
+  // Bring Playwright window to front so mouse events aren't swallowed
+  await page.bringToFront();
+
   const x = box.x + box.width  * (0.3 + Math.random() * 0.4);
   const y = box.y + box.height * (0.3 + Math.random() * 0.4);
+  console.log(`  [executor] clicking (${x.toFixed(0)}, ${y.toFixed(0)})`);
 
-  console.log(`  [executor] mouse.move → (${x.toFixed(0)}, ${y.toFixed(0)})`);
+  // Move to button first (natural mouse path), then full click (down+up+click)
   await page.mouse.move(x, y, { steps: 8 });
-  await humanDelay(80, 200);
+  await humanDelay(60, 150);
+  await page.mouse.click(x, y);   // fires mousedown → mouseup → click together
 
-  console.log(`  [executor] mouse.down`);
-  await page.mouse.down();
-  await humanDelay(40, 120);
-
-  console.log(`  [executor] mouse.up`);
-  await page.mouse.up();
-
-  // Brief wait to let the React handler fire and UI update
-  await new Promise(r => setTimeout(r, 400));
+  // Brief wait for React handler + network round-trip
+  await new Promise(r => setTimeout(r, 500));
   console.log(`  [executor] ✅ clicked`);
 }
 
