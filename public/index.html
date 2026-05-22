@@ -8,17 +8,17 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:         #0d1117;
-      --surface:    #161b22;
-      --border:     #30363d;
-      --green:      #238636;
-      --green-h:    #2ea043;
-      --red:        #b91c1c;
-      --red-h:      #dc2626;
-      --text:       #e6edf3;
-      --muted:      #8b949e;
-      --input-bg:   #010409;
-      --accent:     #1f6feb;
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --green:    #238636;
+      --green-h:  #2ea043;
+      --red:      #b91c1c;
+      --red-h:    #dc2626;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --input-bg: #010409;
+      --accent:   #1f6feb;
     }
 
     body {
@@ -29,7 +29,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px 16px;
+      padding: 40px 16px 60px;
     }
 
     header {
@@ -38,15 +38,8 @@
       gap: 12px;
       margin-bottom: 32px;
     }
-
     header .logo { font-size: 32px; }
-
-    header h1 {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-    }
-
+    header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
     header h1 span { color: var(--green); }
 
     .card {
@@ -55,13 +48,12 @@
       border-radius: 12px;
       padding: 28px;
       width: 100%;
-      max-width: 580px;
+      max-width: 620px;
     }
-
     .card + .card { margin-top: 16px; }
 
     .card-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.6px;
@@ -71,7 +63,6 @@
 
     .field { margin-bottom: 18px; }
     .field:last-child { margin-bottom: 0; }
-
     .field label {
       display: block;
       font-size: 13px;
@@ -79,9 +70,7 @@
       color: var(--muted);
       margin-bottom: 6px;
     }
-
-    .field input,
-    .field textarea {
+    .field input, .field textarea {
       width: 100%;
       background: var(--input-bg);
       border: 1px solid var(--border);
@@ -93,23 +82,87 @@
       transition: border-color 0.15s;
       font-family: inherit;
     }
-
-    .field input:focus,
-    .field textarea:focus { border-color: var(--accent); }
-
-    .field textarea {
-      resize: vertical;
-      min-height: 90px;
-      line-height: 1.5;
-    }
+    .field input:focus, .field textarea:focus { border-color: var(--accent); }
+    .field textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
 
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
-    .actions {
+    /* ── Archetype grid ── */
+    .archetype-header {
       display: flex;
-      gap: 10px;
-      margin-top: 22px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
     }
+    .archetype-header .card-title { margin-bottom: 0; }
+
+    .random-btn {
+      background: #21262d;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .random-btn:hover { background: #30363d; }
+    .random-btn.spin { animation: spin-once 0.4s ease; }
+    @keyframes spin-once {
+      0%   { transform: rotate(0deg) scale(1); }
+      50%  { transform: rotate(180deg) scale(1.1); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
+    .archetypes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .archetype-card {
+      background: var(--input-bg);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 10px 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      user-select: none;
+    }
+    .archetype-card:hover { border-color: #58a6ff; background: #0d1117; transform: translateY(-1px); }
+    .archetype-card.active { border-color: var(--accent); background: #0c1929; }
+
+    .archetype-card .avatar {
+      font-size: 36px;
+      line-height: 1;
+      margin-bottom: 8px;
+      display: block;
+      transition: transform 0.2s;
+    }
+    .archetype-card:hover .avatar { transform: scale(1.1); }
+    .archetype-card.active .avatar { animation: bounce 0.3s ease; }
+    @keyframes bounce {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.2); }
+    }
+
+    .archetype-card .arch-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+    .archetype-card .arch-tag {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* ── Action buttons ── */
+    .actions { display: flex; gap: 10px; margin-top: 22px; }
 
     button {
       cursor: pointer;
@@ -120,21 +173,10 @@
       padding: 10px 22px;
       transition: background 0.15s, opacity 0.15s;
     }
-
-    #startBtn {
-      background: var(--green);
-      color: #fff;
-      flex: 1;
-    }
+    #startBtn { background: var(--green); color: #fff; flex: 1; }
     #startBtn:hover:not(:disabled) { background: var(--green-h); }
-
-    #stopBtn {
-      background: var(--red);
-      color: #fff;
-      display: none;
-    }
+    #stopBtn { background: var(--red); color: #fff; display: none; }
     #stopBtn:hover { background: var(--red-h); }
-
     button:disabled { opacity: 0.45; cursor: not-allowed; }
 
     .status {
@@ -145,41 +187,30 @@
       font-size: 13px;
       color: var(--muted);
     }
-
-    .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--border);
-      flex-shrink: 0;
-    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
     .dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1.5s infinite; }
     .dot.error   { background: var(--red); }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.4; }
-    }
-
-    /* Log panel */
+    /* ── Log panel ── */
     .log-panel {
       background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 14px;
-      height: 320px;
+      height: 340px;
       overflow-y: auto;
-      font-family: "SF Mono", "Fira Code", monospace;
+      font-family: "SF Mono","Fira Code",monospace;
       font-size: 12px;
       line-height: 1.6;
-      scroll-behavior: smooth;
     }
-
-    .log-line { color: var(--muted); white-space: pre-wrap; word-break: break-all; }
-    .log-line.info   { color: var(--text); }
-    .log-line.good   { color: #3fb950; }
-    .log-line.warn   { color: #d29922; }
-    .log-line.err    { color: #f85149; }
-    .log-line.action { color: #79c0ff; font-weight: 600; }
+    .log-line       { color: var(--muted); white-space: pre-wrap; word-break: break-all; }
+    .log-line.info  { color: var(--text); }
+    .log-line.good  { color: #3fb950; }
+    .log-line.warn  { color: #d29922; }
+    .log-line.err   { color: #f85149; }
+    .log-line.action{ color: #79c0ff; font-weight: 600; }
+    .log-line.gamelog{ color: #e3b341; }
   </style>
 </head>
 <body>
@@ -209,9 +240,17 @@
     </div>
   </div>
 
+  <!-- Archetypes -->
   <div class="field">
+    <div class="archetype-header">
+      <div class="card-title">Player Type</div>
+      <button class="random-btn" id="randomBtn">🎲 Random</button>
+    </div>
+
+    <div class="archetypes" id="archetypes"></div>
+
     <label>AI Strategy Prompt</label>
-    <textarea id="strategy" placeholder="e.g. Play GTO poker."></textarea>
+    <textarea id="strategy" placeholder="Select a player type above or write your own..."></textarea>
   </div>
 
   <div class="actions">
@@ -234,88 +273,159 @@
 </div>
 
 <script>
-  const startBtn    = document.getElementById('startBtn');
-  const stopBtn     = document.getElementById('stopBtn');
-  const dot         = document.getElementById('dot');
-  const statusText  = document.getElementById('statusText');
-  const logsEl      = document.getElementById('logs');
-  const tableUrlEl  = document.getElementById('tableUrl');
-  const strategyEl  = document.getElementById('strategy');
-  const botNameEl   = document.getElementById('botName');
-  const stackEl     = document.getElementById('stack');
+// ── Archetypes ──────────────────────────────────────────────
+const ARCHETYPES = [
+  {
+    name: "GTO Bot",
+    tag: "Balanced",
+    avatar: "🤖",
+    prompt: "Play GTO (Game Theory Optimal) poker. Use balanced ranges, mix value bets and bluffs at correct frequencies, apply correct preflop ranges based on position, use proper bet sizing, and make mathematically correct decisions."
+  },
+  {
+    name: "Calling Station",
+    tag: "Loose Passive",
+    avatar: "📞",
+    prompt: "You are a calling station. You love to call and hate folding — you always think your hand might be good enough. Rarely raise. Call down with any pair, any draw, or any hope of improving. Chase gutshots and backdoor draws regardless of pot odds. Never bluff."
+  },
+  {
+    name: "Maniac",
+    tag: "Loose Aggressive",
+    avatar: "🔥",
+    prompt: "You are a maniac — extremely loose and aggressive. Raise and re-raise constantly with a very wide range. Bluff frequently on all streets. Make large bets to put maximum pressure on opponents. 3-bet and 4-bet light. Be completely unpredictable and fearless."
+  },
+  {
+    name: "Nit",
+    tag: "Tight Passive",
+    avatar: "🧊",
+    prompt: "You are a nit — extremely tight and passive. Only play premium hands: AA, KK, QQ, JJ, AKs, AKo. Fold everything else preflop without hesitation. When you do play, bet for value only. Never bluff. Fold to any aggression unless you have the nuts."
+  },
+  {
+    name: "TAG",
+    tag: "Tight Aggressive",
+    avatar: "🎯",
+    prompt: "You are a tight aggressive player (TAG). Play a tight range of strong hands but play them aggressively. Always raise or fold preflop — never limp. Make continuation bets, apply pressure, and build pots with your good hands. Fold weak hands quickly."
+  },
+  {
+    name: "Fish",
+    tag: "Recreational",
+    avatar: "🐟",
+    prompt: "You are a recreational fish. Play too many hands including weak suited cards and low connectors. Chase flush draws and straight draws even with bad pot odds. Make random hero calls with weak hands. Occasionally bluff at random. Get excited by any pair."
+  },
+];
 
-  let evtSource = null;
+const archetypesEl = document.getElementById('archetypes');
+const strategyEl   = document.getElementById('strategy');
+const randomBtn    = document.getElementById('randomBtn');
+let activeIdx = -1;
 
-  // Load defaults from server
-  fetch('/config').then(r => r.json()).then(cfg => {
-    if (cfg.tableUrl)  tableUrlEl.value  = cfg.tableUrl;
-    if (cfg.strategy)  strategyEl.value  = cfg.strategy;
-    if (cfg.botName)   botNameEl.value   = cfg.botName;
-    if (cfg.stack)     stackEl.value     = cfg.stack;
+function renderArchetypes() {
+  archetypesEl.innerHTML = '';
+  ARCHETYPES.forEach((a, i) => {
+    const card = document.createElement('div');
+    card.className = 'archetype-card' + (i === activeIdx ? ' active' : '');
+    card.innerHTML = `
+      <span class="avatar">${a.avatar}</span>
+      <div class="arch-name">${a.name}</div>
+      <div class="arch-tag">${a.tag}</div>
+    `;
+    card.addEventListener('click', () => selectArchetype(i));
+    archetypesEl.appendChild(card);
   });
+}
 
-  function addLog(msg) {
-    const line = document.createElement('div');
-    line.className = 'log-line';
-    if (msg.includes('✅') || msg.includes('Claude says') || msg.includes('♥')) line.classList.add('good');
-    else if (msg.includes('⚠') || msg.includes('warn'))  line.classList.add('warn');
-    else if (msg.includes('❌') || msg.includes('err]'))  line.classList.add('err');
-    else if (msg.includes('action=') || msg.includes('MY TURN')) line.classList.add('action');
-    else if (msg.includes('[bot]') || msg.includes('[scrape]') || msg.includes('[executor]')) line.classList.add('info');
-    line.textContent = msg;
-    logsEl.appendChild(line);
-    logsEl.scrollTop = logsEl.scrollHeight;
-  }
+function selectArchetype(i) {
+  activeIdx = i;
+  strategyEl.value = ARCHETYPES[i].prompt;
+  renderArchetypes();
+}
 
-  function setRunning(running) {
-    startBtn.disabled = running;
-    stopBtn.style.display = running ? 'block' : 'none';
-    dot.className = 'dot' + (running ? ' running' : '');
-    statusText.textContent = running ? 'Bot running' : 'Idle';
-  }
+randomBtn.addEventListener('click', () => {
+  randomBtn.classList.remove('spin');
+  void randomBtn.offsetWidth; // reflow to restart animation
+  randomBtn.classList.add('spin');
+  const i = Math.floor(Math.random() * ARCHETYPES.length);
+  selectArchetype(i);
+});
 
-  startBtn.addEventListener('click', async () => {
-    const body = {
-      tableUrl: tableUrlEl.value.trim(),
-      botName:  botNameEl.value.trim() || 'PokerBot',
-      stack:    parseInt(stackEl.value) || 1000,
-      strategy: strategyEl.value.trim() || 'Play GTO poker.',
-    };
+renderArchetypes();
 
-    if (!body.tableUrl) { alert('Enter a Table URL'); return; }
+// ── Config & controls ────────────────────────────────────────
+const startBtn   = document.getElementById('startBtn');
+const stopBtn    = document.getElementById('stopBtn');
+const dot        = document.getElementById('dot');
+const statusText = document.getElementById('statusText');
+const logsEl     = document.getElementById('logs');
+const tableUrlEl = document.getElementById('tableUrl');
+const botNameEl  = document.getElementById('botName');
+const stackEl    = document.getElementById('stack');
 
-    logsEl.innerHTML = '';
-    addLog('Starting bot...');
+let evtSource = null;
 
-    const res = await fetch('/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    if (data.error) { addLog('❌ ' + data.error); return; }
+fetch('/config').then(r => r.json()).then(cfg => {
+  if (cfg.tableUrl) tableUrlEl.value = cfg.tableUrl;
+  if (cfg.botName)  botNameEl.value  = cfg.botName;
+  if (cfg.stack)    stackEl.value    = cfg.stack;
+  // Only pre-fill strategy if no archetype already selected
+  if (cfg.strategy && activeIdx === -1) strategyEl.value = cfg.strategy;
+});
 
-    setRunning(true);
+function addLog(msg) {
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  if      (msg.startsWith('[log]'))                              line.classList.add('gamelog');
+  else if (msg.includes('✅') || msg.includes('♥') || msg.includes('Claude says')) line.classList.add('good');
+  else if (msg.includes('⚠') || msg.includes('warn'))           line.classList.add('warn');
+  else if (msg.includes('❌') || msg.includes('err]'))          line.classList.add('err');
+  else if (msg.includes('action=') || msg.includes('MY TURN'))  line.classList.add('action');
+  else if (msg.includes('[bot]') || msg.includes('[scrape]') || msg.includes('[executor]')) line.classList.add('info');
+  line.textContent = msg;
+  logsEl.appendChild(line);
+  logsEl.scrollTop = logsEl.scrollHeight;
+}
 
-    // Stream logs via SSE
-    evtSource = new EventSource('/logs');
-    evtSource.onmessage = e => {
-      const msg = JSON.parse(e.data);
-      addLog(msg);
-      if (msg.includes('process exited') || msg.includes('stopped by user')) {
-        setRunning(false);
-        evtSource?.close();
-      }
-    };
-  });
+function setRunning(running) {
+  startBtn.disabled = running;
+  stopBtn.style.display = running ? 'block' : 'none';
+  dot.className = 'dot' + (running ? ' running' : '');
+  statusText.textContent = running ? 'Bot running' : 'Idle';
+}
 
-  stopBtn.addEventListener('click', async () => {
-    await fetch('/stop', { method: 'POST' });
-    evtSource?.close();
-    setRunning(false);
-    addLog('Bot stopped.');
-  });
+startBtn.addEventListener('click', async () => {
+  const body = {
+    tableUrl: tableUrlEl.value.trim(),
+    botName:  botNameEl.value.trim() || 'PokerBot',
+    stack:    parseInt(stackEl.value) || 1000,
+    strategy: strategyEl.value.trim() || 'Play GTO poker.',
+  };
+  if (!body.tableUrl) { alert('Enter a Table URL'); return; }
+
+  logsEl.innerHTML = '';
+  const arch = activeIdx >= 0 ? ARCHETYPES[activeIdx] : null;
+  addLog(`Starting bot${arch ? ` as "${arch.name}" ${arch.avatar}` : ''}...`);
+
+  const res  = await fetch('/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+  const data = await res.json();
+  if (data.error) { addLog('❌ ' + data.error); return; }
+
+  setRunning(true);
+
+  evtSource = new EventSource('/logs');
+  evtSource.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    addLog(msg);
+    if (msg.includes('process exited') || msg.includes('stopped by user')) {
+      setRunning(false);
+      evtSource?.close();
+    }
+  };
+});
+
+stopBtn.addEventListener('click', async () => {
+  await fetch('/stop', { method: 'POST' });
+  evtSource?.close();
+  setRunning(false);
+  addLog('Bot stopped.');
+});
 </script>
-
 </body>
 </html>
