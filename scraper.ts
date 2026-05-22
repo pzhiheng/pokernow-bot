@@ -165,6 +165,68 @@ export async function scrapeGameState(page: Page, handNumber: number, playerRead
   }
 }
 
+// Full join flow: accept ToS → click an empty seat → fill name + stack → submit
+export async function joinTable(page: Page, name: string, stack: number): Promise<void> {
+  // Already seated — nothing to do
+  const alreadySeated = await page.$(".you-player");
+  if (alreadySeated) {
+    console.log("[join] already seated, skipping join flow");
+    return;
+  }
+
+  // Accept ToS if the banner is visible
+  const tos = await page.$("#accept-tos-button");
+  if (tos) {
+    console.log("[join] accepting ToS...");
+    await tos.click();
+    await page.waitForTimeout(600);
+  }
+
+  // Click the first available empty seat
+  const sitBtn = await page.$(".table-player-seat .table-player-seat-button");
+  if (!sitBtn) {
+    console.log("[join] ⚠ no empty seats found — may already be full");
+    return;
+  }
+  console.log("[join] clicking Sit...");
+  await sitBtn.click();
+
+  // Wait for the seat popover to appear
+  await page.waitForSelector(".request-ingress-popover", { timeout: 5000 })
+    .catch(() => console.log("[join] ⚠ popover did not appear"));
+
+  // Fill nickname
+  const nameInput = await page.$('.request-ingress-popover input[placeholder="Your Name"]');
+  if (nameInput) {
+    console.log(`[join] entering name: "${name}"`);
+    await nameInput.click({ clickCount: 3 });
+    await nameInput.fill(name);
+  } else {
+    console.log("[join] ⚠ name input not found");
+  }
+
+  // Fill intended stack
+  const stackInput = await page.$('.request-ingress-popover input[placeholder="Intended Stack"]');
+  if (stackInput) {
+    console.log(`[join] entering stack: ${stack}`);
+    await stackInput.click({ clickCount: 3 });
+    await stackInput.fill(String(stack));
+  } else {
+    console.log("[join] ⚠ stack input not found");
+  }
+
+  // Submit — "Request the Seat"
+  const submitBtn = await page.$('.request-ingress-popover button[type="submit"]');
+  if (submitBtn) {
+    console.log("[join] submitting seat request...");
+    await submitBtn.click();
+    await page.waitForTimeout(1500);
+    console.log("[join] ✅ seat requested");
+  } else {
+    console.log("[join] ⚠ submit button not found");
+  }
+}
+
 export async function isMyTurn(page: Page): Promise<boolean> {
   const signal = await page.$(SEL.isMyTurn);
   if (!signal) return false;

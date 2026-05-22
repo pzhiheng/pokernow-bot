@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { chromium } from "playwright";
 import fs from "fs";
-import { scrapeGameState, scrapeGameLog, isMyTurn, dumpDom } from "./scraper";
+import { scrapeGameState, scrapeGameLog, isMyTurn, joinTable, dumpDom } from "./scraper";
 import { decideAction, updatePlayerReads } from "./ai";
 import { executeAction } from "./executor";
 import { PlayerReads } from "./types";
@@ -56,7 +56,10 @@ async function main() {
 
   console.log("[bot] navigating to table...");
   await page.goto(TABLE_URL, { waitUntil: "networkidle" });
-  console.log("[bot] ✅ page loaded — make sure you are seated and a hand is running");
+  console.log("[bot] ✅ page loaded");
+
+  // Automatically sit down and request the intended stack
+  await joinTable(page, BOT_NAME, STACK);
   console.log("[bot] polling every 1.5s...\n");
 
   let playerReads = loadReads();

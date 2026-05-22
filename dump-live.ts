@@ -5,35 +5,28 @@ import fs from "fs";
 const TABLE_URL = process.env.TABLE_URL ?? "";
 
 async function main() {
-  if (!TABLE_URL) {
-    console.error("Set TABLE_URL in .env");
-    process.exit(1);
-  }
+  if (!TABLE_URL) { console.error("Set TABLE_URL in .env"); process.exit(1); }
 
   const browser = await chromium.launch({ headless: false });
   const page = await browser.newPage();
   await page.goto(TABLE_URL, { waitUntil: "networkidle" });
 
-  console.log("\n✅ Browser opened. In the Playwright window:");
-  console.log("   1. Sit down at a seat");
-  console.log("   2. Add chips if needed");
-  console.log("   3. Start a hand (deal cards)");
-  console.log("\n⏳ Waiting 60 seconds — press Enter here to dump early...\n");
+  console.log("\n✅ Browser open.");
+  console.log("   1. Click a 'Sit' button on any empty seat");
+  console.log("   2. Let the dialog fully appear");
+  console.log("\n⏳ Dumping in 15s (or press Enter)...\n");
 
-  // wait for Enter key or 60s timeout
-  const timeout = new Promise<void>(r => setTimeout(r, 60000));
-  const keypress = new Promise<void>(r => {
-    process.stdin.setRawMode?.(true);
-    process.stdin.resume();
-    process.stdin.once("data", () => { process.stdin.setRawMode?.(false); r(); });
-  });
+  await Promise.race([
+    new Promise<void>(r => setTimeout(r, 15000)),
+    new Promise<void>(r => {
+      process.stdin.setRawMode?.(true);
+      process.stdin.resume();
+      process.stdin.once("data", () => { process.stdin.setRawMode?.(false); r(); });
+    }),
+  ]);
 
-  await Promise.race([timeout, keypress]);
-
-  const html = await page.content();
-  fs.writeFileSync("pokernow-dom-dump.html", html);
+  fs.writeFileSync("pokernow-dom-dump.html", await page.content());
   console.log("✅ Saved pokernow-dom-dump.html");
-
   await browser.close();
 }
 
