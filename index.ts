@@ -6,10 +6,10 @@ import { decideAction, updatePlayerReads } from "./ai";
 import { executeAction } from "./executor";
 import { PlayerReads } from "./types";
 
-const TABLE_URL = process.env.TABLE_URL ?? "";
-const BOT_NAME  = process.env.BOT_NAME  ?? "PokerBot";
-const STACK     = parseInt(process.env.STACK ?? "1000");
-const READS_FILE = "player_reads.json";
+const TABLE_URL  = process.env.TABLE_URL  ?? "";
+const BOT_NAME   = process.env.BOT_NAME   ?? "PokerBot";
+const STACK      = parseInt(process.env.STACK ?? "1000");
+const READS_FILE = process.env.READS_FILE ?? "player_reads.json";
 const POLL_MS = 1500;
 
 function loadReads(): PlayerReads {
